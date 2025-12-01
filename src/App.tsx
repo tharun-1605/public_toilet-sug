@@ -135,8 +135,8 @@ function App() {
       filtered = nearbyToilets;
     } else if (selectedLocation) {
       filtered = filtered.filter(toilet => 
-        toilet.city.toLowerCase() === selectedLocation.toLowerCase() ||
-        toilet.district.toLowerCase() === selectedLocation.toLowerCase()
+        toilet.city.toLowerCase().includes(selectedLocation.toLowerCase()) ||
+        toilet.district.toLowerCase().includes(selectedLocation.toLowerCase())
       );
     }
 
