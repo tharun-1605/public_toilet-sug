@@ -38,7 +38,7 @@ function App() {
   const loadInitialData = async (location?: { longitude: number; latitude: number }) => {
     setIsLoadingApi(true);
     setApiError('');
-    
+
     try {
       // Try to fetch from API only with user location if available
       let apiData;
@@ -58,9 +58,10 @@ function App() {
       }
     } catch (error) {
       console.error('API fetch failed:', error);
-      setApiError('Unable to fetch live data. Please try again later.');
-      // Do not fallback to mock data
-      setToiletData([]);
+      setApiError('Unable to fetch live data. Using cached data instead.');
+      // Fallback to mock data when API fails
+      const processedMockData = processToiletData(mockToiletData);
+      setToiletData(processedMockData);
     } finally {
       setIsLoadingApi(false);
     }
@@ -127,17 +128,28 @@ function App() {
     // Filter by current location or selected location
     if (isUsingCurrentLocation && userLocation) {
       const nearbyToilets: ToiletWithDistance[] = findNearbyToilets(toiletData, userLocation, 10) as ToiletWithDistance[];
-      
+
       if (nearbyToilets.length === 0) {
         setApiError('No toilets found within 10km of your location.');
       }
-      
+
       filtered = nearbyToilets;
     } else if (selectedLocation) {
-      filtered = filtered.filter(toilet => 
+      filtered = filtered.filter(toilet =>
         toilet.city.toLowerCase().includes(selectedLocation.toLowerCase()) ||
         toilet.district.toLowerCase().includes(selectedLocation.toLowerCase())
       );
+
+      // If no toilets found for selected location and we're using API data, fall back to mock data
+      if (filtered.length === 0 && toiletData.length > 0 && !toiletData.some(t => t.city.toLowerCase().includes(selectedLocation.toLowerCase()))) {
+        const mockFiltered = mockToiletData.filter(toilet =>
+          toilet.city.toLowerCase().includes(selectedLocation.toLowerCase()) ||
+          toilet.district.toLowerCase().includes(selectedLocation.toLowerCase())
+        );
+        if (mockFiltered.length > 0) {
+          filtered = processToiletData(mockFiltered);
+        }
+      }
     }
 
     // Filter by search term
